@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>TimeCraft — Smart Timetable Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#f0f2f5;--surface:#fff;--sidebar-bg:#0f1f3d;--sidebar-hover:rgba(255,255,255,.07);
+  --topbar:#1e3a8a;--border:#e2e8f0;--text:#0f172a;--muted:#64748b;
+  --accent:#2563eb;--accent-soft:#eff6ff;
+  --green:#16a34a;--green-soft:#f0fdf4;--green-border:#bbf7d0;
+  --red:#dc2626;--red-soft:#fef2f2;--red-border:#fecaca;
+  --yellow:#d97706;--yellow-soft:#fffbeb;--yellow-border:#fde68a;
+  --purple:#7c3aed;--teal:#0d9488;--orange:#ea580c;
+  --radius:10px;--radius-lg:14px;
+  --shadow:0 1px 3px rgba(0,0,0,.07),0 4px 16px rgba(0,0,0,.05);
+  --shadow-md:0 4px 16px rgba(0,0,0,.1),0 8px 32px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Nunito',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:linear-gradient(135deg,#0f172a,#1e3a8a 55%,#1e40af);position:relative;overflow:hidden}
+#login-screen::before{content:'';position:absolute;inset:0;
+  background:radial-gradient(ellipse at 25% 20%,rgba(37,99,235,.35) 0%,transparent 55%),
+             radial-gradient(ellipse at 75% 80%,rgba(124,58,237,.25) 0%,transparent 55%)}
+.lc{background:#fff;border-radius:20px;padding:44px 40px 36px;width:390px;
+  box-shadow:0 32px 80px rgba(0,0,0,.45);position:relative;z-index:1}
+.lc-logo{width:52px;height:52px;background:linear-gradient(135deg,var(--accent),var(--purple));
+  border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:20px}
+.lc h1{font-family:'Playfair Display',serif;font-size:1.7rem;line-height:1.2}
+.lc .sub{color:var(--muted);font-size:.875rem;margin-top:5px;margin-bottom:28px}
+.lfield{margin-bottom:14px}
+.lfield label{display:block;font-size:.78rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-bottom:5px}
+.lfield input,.lfield select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:.9rem;font-family:inherit;outline:none;transition:border-color .2s,box-shadow .2s}
+.lfield input:focus,.lfield select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.12)}
+.btn-login{width:100%;padding:13px;background:linear-gradient(135deg,var(--accent),#1d4ed8);
+  color:#fff;border:none;border-radius:9px;font-size:.95rem;font-family:inherit;font-weight:700;cursor:pointer;margin-top:4px}
+.btn-login:hover{opacity:.9}
+#lerr{color:var(--red);font-size:.82rem;margin-top:10px;min-height:18px;text-align:center}
+.lhint{text-align:center;margin-top:14px;font-size:.8rem;color:var(--muted)}
+.lhint code{background:#f1f5f9;padding:2px 7px;border-radius:4px;font-size:.78rem;color:var(--accent);font-weight:700}
+.role-tabs{display:flex;gap:6px;margin-bottom:20px}
+.role-tab{flex:1;padding:8px;border:1.5px solid var(--border);border-radius:8px;text-align:center;cursor:pointer;font-size:.82rem;font-weight:700;color:var(--muted);transition:all .15s}
+.role-tab.active{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+
+/* APP */
+#app{display:none}
+.topbar{height:56px;background:var(--topbar);display:flex;align-items:center;justify-content:space-between;
+  padding:0 24px;position:fixed;top:0;left:0;right:0;z-index:200;box-shadow:0 2px 12px rgba(0,0,0,.2)}
+.tb-left{display:flex;align-items:center;gap:12px}
+.tb-logo{width:32px;height:32px;background:linear-gradient(135deg,#60a5fa,#a78bfa);
+  border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px}
+.tb-title{font-family:'Playfair Display',serif;font-size:1.15rem;color:#fff;font-weight:600}
+.tb-right{display:flex;align-items:center;gap:14px}
+.av{width:30px;height:30px;background:linear-gradient(135deg,#60a5fa,#a78bfa);border-radius:50%;
+  display:flex;align-items:center;justify-content:center;font-size:.72rem;color:#fff;font-weight:700}
+.tb-user{display:flex;align-items:center;gap:8px;color:rgba(255,255,255,.85);font-size:.82rem;font-weight:600}
+.tb-role-badge{padding:3px 9px;border-radius:99px;font-size:.69rem;font-weight:800;text-transform:uppercase;letter-spacing:.4px}
+.role-hod{background:rgba(124,58,237,.3);color:#c4b5fd}
+.role-teacher{background:rgba(22,163,74,.3);color:#86efac}
+.role-student{background:rgba(234,88,12,.3);color:#fdba74}
+.btn-logout{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);color:#fff;
+  padding:6px 14px;border-radius:7px;cursor:pointer;font-family:inherit;font-size:.8rem;font-weight:600}
+.btn-logout:hover{background:rgba(255,255,255,.2)}
+
+/* LAYOUT */
+.layout{display:flex;padding-top:56px;min-height:100vh}
+.sidebar{width:240px;background:var(--sidebar-bg);position:fixed;top:56px;left:0;bottom:0;
+  overflow-y:auto;z-index:100;padding:14px 0 28px}
+.sid-sec{padding:0 16px;margin:18px 0 5px;font-size:.65rem;font-weight:800;
+  color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px}
+.sid-sec:first-child{margin-top:6px}
+.nitem{display:flex;align-items:center;gap:10px;padding:10px 14px;margin:1px 10px;
+  border-radius:8px;color:rgba(255,255,255,.6);font-size:.875rem;font-weight:600;cursor:pointer;transition:all .15s}
+.nitem:hover{background:var(--sidebar-hover);color:#fff}
+.nitem.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px rgba(37,99,235,.4)}
+.nicon{width:28px;height:28px;border-radius:7px;background:rgba(255,255,255,.08);
+  display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.nitem.active .nicon{background:rgba(255,255,255,.2)}
+.nbadge{margin-left:auto;background:rgba(255,255,255,.15);color:#fff;
+  border-radius:99px;font-size:.65rem;font-weight:800;padding:1px 7px;min-width:18px;text-align:center}
+.nitem.active .nbadge{background:rgba(255,255,255,.3)}
+.nstep{margin-left:auto;width:18px;height:18px;border-radius:50%;background:rgba(255,255,255,.12);
+  color:rgba(255,255,255,.5);font-size:.62rem;font-weight:800;display:flex;align-items:center;justify-content:center}
+.nitem.active .nstep{background:rgba(255,255,255,.3);color:#fff}
+.nitem.done-step .nstep{background:#16a34a;color:#fff}
+
+/* CONTENT */
+.content{margin-left:240px;flex:1;padding:26px 30px;min-height:calc(100vh - 56px)}
+.page{display:none}
+.page.active{display:block;animation:fadeUp .2s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* PAGE HEADER */
+.ph{margin-bottom:22px}
+.ph .bc{font-size:.75rem;color:var(--muted);font-weight:700;margin-bottom:6px}
+.ph .bc span{color:var(--accent)}
+.ph h2{font-family:'Playfair Display',serif;font-size:1.55rem}
+.ph p{color:var(--muted);font-size:.85rem;margin-top:3px}
+
+/* CARD */
+.card{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:20px 22px;margin-bottom:20px;box-shadow:var(--shadow)}
+.ch{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.ct{font-size:.9rem;font-weight:800;color:var(--text)}
+.cs{font-size:.78rem;color:var(--muted);margin-top:3px;font-weight:500}
+
+/* ALERT */
+.alert{display:none;align-items:center;gap:10px;padding:11px 15px;border-radius:9px;
+  font-size:.84rem;font-weight:700;margin-bottom:14px;border:1.5px solid;animation:apop .22s ease}
+@keyframes apop{from{transform:scale(.97);opacity:0}to{transform:none;opacity:1}}
+.alert.show{display:flex}
+.alert-err{background:var(--red-soft);color:#991b1b;border-color:var(--red-border)}
+.alert-warn{background:var(--yellow-soft);color:#92400e;border-color:var(--yellow-border)}
+.alert-ok{background:var(--green-soft);color:#166534;border-color:var(--green-border)}
+.alert .ac{margin-left:auto;background:none;border:none;cursor:pointer;font-size:1rem;opacity:.55;line-height:1;padding:0 2px}
+.alert .ac:hover{opacity:1}
+
+/* FORM */
+.frow{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+.fg{display:flex;flex-direction:column;gap:5px;flex:1;min-width:150px}
+.fg label{font-size:.73rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.6px}
+.fg input,.fg select{padding:10px 13px;border:1.5px solid var(--border);border-radius:8px;
+  font-size:.875rem;font-family:inherit;outline:none;background:#fff;color:var(--text);
+  transition:border-color .2s,box-shadow .2s}
+.fg input:focus,.fg select:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.fg select{cursor:pointer}
+.inp-err{border-color:var(--red)!important;box-shadow:0 0 0 3px rgba(220,38,38,.09)!important}
+
+/* BUTTONS */
+.btn{padding:10px 18px;border:none;border-radius:8px;font-family:inherit;font-size:.85rem;font-weight:700;
+  cursor:pointer;transition:all .15s;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:active{transform:scale(.97)}
+.btn-p{background:var(--accent);color:#fff}.btn-p:hover{background:#1d4ed8}
+.btn-g{background:var(--green);color:#fff}.btn-g:hover{background:#15803d}
+.btn-d{background:var(--red);color:#fff}.btn-d:hover{background:#b91c1c}
+.btn-w{background:var(--yellow);color:#fff}.btn-w:hover{background:#b45309}
+.btn-ghost{background:#f1f5f9;color:var(--muted);border:1px solid var(--border)}.btn-ghost:hover{background:#e2e8f0;color:var(--text)}
+.btn-sm{padding:6px 11px;font-size:.77rem}
+.btn-next{background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;padding:9px 20px;font-size:.83rem}
+.btn-gen{background:linear-gradient(135deg,var(--green),var(--teal));color:#fff;font-size:.95rem;
+  padding:12px 28px;box-shadow:0 4px 14px rgba(22,163,74,.3)}
+.btn-gen:hover{opacity:.92}
+
+/* STAT GRID */
+.sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(148px,1fr));gap:14px;margin-bottom:22px}
+.sc{background:#fff;border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:17px 18px;box-shadow:var(--shadow);display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.sc:hover{border-color:var(--accent)}
+.sc-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.sc-num{font-family:'Playfair Display',serif;font-size:1.85rem;font-weight:700;line-height:1}
+.sc-lbl{font-size:.72rem;color:var(--muted);font-weight:700;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+
+/* TABLE */
+.tw{overflow-x:auto;border-radius:var(--radius)}
+table.dt{width:100%;border-collapse:collapse;font-size:.85rem}
+.dt thead tr{background:#f8fafc}
+.dt th{padding:10px 14px;text-align:left;font-size:.7rem;font-weight:800;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.6px;border-bottom:1.5px solid var(--border);white-space:nowrap}
+.dt td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle}
+.dt tr:last-child td{border-bottom:none}
+.dt tbody tr:hover td{background:#f8fafc}
+
+/* CHIPS */
+.chip{display:inline-flex;align-items:center;gap:3px;padding:3px 10px;border-radius:99px;font-size:.74rem;font-weight:700;margin:2px}
+.c-blue{background:#dbeafe;color:#1d4ed8}.c-green{background:#dcfce7;color:#15803d}
+.c-orange{background:#ffedd5;color:#c2410c}.c-purple{background:#ede9fe;color:#6d28d9}
+.c-teal{background:#ccfbf1;color:#0f766e}.c-gray{background:#f1f5f9;color:#475569}
+.c-red{background:#fee2e2;color:#b91c1c}.c-pink{background:#fce7f3;color:#9d174d}
+.c-yellow{background:#fef9c3;color:#854d0e}.c-indigo{background:#e0e7ff;color:#3730a3}
+
+/* CHECK GRID */
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:8px}
+.citem{display:flex;align-items:center;gap:9px;padding:9px 13px;border:1.5px solid var(--border);
+  border-radius:8px;cursor:pointer;font-size:.85rem;font-weight:600;transition:all .15s;background:#fff;user-select:none}
+.citem:hover{border-color:var(--accent);background:var(--accent-soft)}
+.citem.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.citem input{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;cursor:pointer}
+
+/* TEACHER-SUBJECT ASSIGN ROWS */
+.ts-list{display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;
+  border:1.5px solid var(--border);border-radius:9px;padding:8px 10px;background:#fafbfc}
+.ts-row{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:7px;
+  cursor:pointer;transition:background .12s;user-select:none}
+.ts-row:hover{background:#f0f4ff}
+.ts-row.on{background:var(--accent-soft)}
+.ts-row input{accent-color:var(--accent);width:15px;height:15px;flex-shrink:0;cursor:pointer}
+.ts-row .ts-lbl{font-size:.875rem;font-weight:600;flex:1}
+.ts-row.on .ts-lbl{color:var(--accent)}
+.ts-cur{font-size:.72rem;font-weight:700;margin-left:auto;white-space:nowrap}
+
+/* WORKFLOW STEPS on dashboard */
+.wf-row{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:10px;
+  border:1.5px solid var(--border);margin-bottom:8px;cursor:pointer;transition:border-color .15s,background .15s}
+.wf-row:hover{border-color:var(--accent);background:#fafcff}
+.wf-row.wf-done{background:var(--green-soft);border-color:var(--green-border)}
+.wf-row.wf-active{background:var(--accent-soft);border-color:#bfdbfe}
+.wf-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+  font-size:.82rem;font-weight:800;flex-shrink:0;background:#e2e8f0;color:var(--muted)}
+.wf-row.wf-done .wf-num{background:var(--green);color:#fff}
+.wf-row.wf-active .wf-num{background:var(--accent);color:#fff}
+.wf-info{flex:1}
+.wf-label{font-weight:800;font-size:.88rem}
+.wf-row.wf-done .wf-label{color:var(--green)}
+.wf-row.wf-active .wf-label{color:var(--accent)}
+.wf-hint{font-size:.74rem;color:var(--muted);margin-top:2px}
+.wf-status{font-size:.77rem;font-weight:800}
+.wf-row.wf-done .wf-status{color:var(--green)}
+.wf-row.wf-active .wf-status{color:var(--accent)}
+
+/* EMPTY STATE */
+.empty{text-align:center;padding:44px 20px;color:var(--muted)}
+.empty-ico{font-size:2.4rem;margin-bottom:10px}
+.empty p{font-size:.9rem;font-weight:600}
+.empty small{font-size:.78rem;display:block;margin-top:4px}
+
+/* INLINE EDIT */
+.iedit{padding:6px 10px;border:1.5px solid var(--accent);border-radius:7px;font-size:.85rem;font-family:inherit;outline:none;min-width:150px}
+
+/* TOAST */
+#tc{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 16px;border-radius:10px;font-size:.85rem;font-weight:700;color:#fff;
+  box-shadow:var(--shadow-md);animation:tin .28s cubic-bezier(.34,1.56,.64,1);
+  display:flex;align-items:center;gap:8px;max-width:340px;border-left:4px solid rgba(255,255,255,.3)}
+.t-ok{background:var(--green)}.t-err{background:var(--red)}.t-warn{background:var(--yellow)}.t-info{background:var(--accent)}
+@keyframes tin{from{transform:translateX(60px);opacity:0}to{transform:none;opacity:1}}
+
+/* TIMETABLE */
+.ttabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.ttab{padding:8px 16px;border:1.5px solid var(--border);border-radius:8px;cursor:pointer;
+  font-size:.83rem;font-weight:700;background:#fff;color:var(--muted);transition:all .15s}
+.ttab:hover{border-color:var(--accent);color:var(--accent)}
+.ttab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 2px 8px rgba(37,99,235,.25)}
+
+.ttwrap{overflow-x:auto;border-radius:var(--radius-lg);border:1px solid var(--border);box-shadow:var(--shadow)}
+.tttable{width:100%;border-collapse:collapse;font-size:.82rem}
+.tttable thead{background:var(--sidebar-bg)}
+.tttable th{padding:11px 10px;color:rgba(255,255,255,.85);font-size:.7rem;font-weight:800;
+  text-transform:uppercase;letter-spacing:.6px;text-align:center;white-space:nowrap;border-right:1px solid rgba(255,255,255,.08)}
+.tttable th:first-child{text-align:left;padding-left:14px;background:rgba(0,0,0,.15);min-width:90px}
+.tttable th.bh{background:rgba(255,255,255,.04);font-size:.63rem;color:rgba(255,255,255,.45)}
+.tttable td{border:1px solid var(--border);padding:0;vertical-align:top;min-width:106px}
+.tttable td.dl{background:#f8fafc;font-size:.78rem;font-weight:800;text-align:left;padding:10px 12px;
+  white-space:nowrap;vertical-align:middle;border-right:2px solid var(--border)}
+.tttable td.bc{background:#f8fafc;text-align:center;vertical-align:middle;padding:5px}
+.bl{font-size:.66rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;line-height:1.5}
+.pc{padding:8px 9px;min-height:58px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;text-align:center}
+.pc .ps{font-weight:800;font-size:.82rem;line-height:1.2}
+.pc .pt{font-size:.69rem;opacity:.8;font-weight:600;margin-top:2px}
+.pc-b{background:#eff6ff;color:#1e40af}.pc-g{background:#f0fdf4;color:#166534}
+.pc-o{background:#fff7ed;color:#9a3412}.pc-p{background:#f5f3ff;color:#5b21b6}
+.pc-t{background:#f0fdfa;color:#134e4a}.pc-r{background:#fff1f2;color:#9f1239}
+.pc-y{background:#fefce8;color:#713f12}.pc-i{background:#eef2ff;color:#312e81}
+.pc-c{background:#ecfeff;color:#164e63}
+
+/* CLASH BADGE */
+.clash-badge{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:5px;
+  font-size:.68rem;font-weight:800;padding:1px 6px;margin-top:3px;display:inline-block}
+
+/* PERIODS INPUT */
+.periods-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-top:12px}
+.period-row{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1.5px solid var(--border);border-radius:9px;background:#fafbfc}
+.period-row .pr-lbl{font-weight:700;font-size:.84rem;min-width:70px}
+.period-row input{padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-family:inherit;font-size:.83rem;width:95px;outline:none}
+.period-row input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(37,99,235,.1)}
+.period-row .pr-type{font-size:.72rem;color:var(--muted);font-weight:700;padding:2px 8px;border-radius:99px;background:#f1f5f9}
+.period-row.pr-break{background:#fffbeb;border-color:var(--yellow-border)}
+.period-row.pr-break .pr-type{background:#fef9c3;color:#854d0e}
+
+/* SETTINGS */
+.settings-section{display:flex;flex-direction:column;gap:14px}
+.setting-item{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;
+  border:1.5px solid var(--border);border-radius:10px;background:#fafbfc;gap:12px;flex-wrap:wrap}
+.setting-item .si-info{flex:1}
+.setting-item .si-label{font-weight:800;font-size:.88rem}
+.setting-item .si-desc{font-size:.76rem;color:var(--muted);margin-top:2px}
+
+/* READONLY TIMETABLE for student/teacher */
+.ro-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:8px;
+  font-size:.78rem;font-weight:700;margin-bottom:14px}
+.ro-view{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
+.ro-student{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:1000;
+  align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:16px;padding:28px;width:460px;max-width:95vw;
+  box-shadow:0 24px 64px rgba(0,0,0,.25);animation:apop .2s ease}
+.modal h3{font-family:'Playfair Display',serif;font-size:1.2rem;margin-bottom:16px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+
+@media print{.sidebar,.topbar,.ttabs,.btn,.ph p{display:none!important}
+  .content{margin-left:0;padding:10px}.ttwrap{border:none;box-shadow:none}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="lc">
+    <div class="lc-logo">📅</div>
+    <h1>TimeCraft</h1>
+    <div class="sub">Smart Timetable Generator</div>
+    <!-- Role Tabs -->
+    <div class="role-tabs">
+      <div class="role-tab active" onclick="setLoginRole('hod')" id="rtab-hod">🎓 HOD / Admin</div>
+      <div class="role-tab" onclick="setLoginRole('teacher')" id="rtab-teacher">👨‍🏫 Teacher</div>
+      <div class="role-tab" onclick="setLoginRole('student')" id="rtab-student">🎒 Student</div>
+    </div>
+    <div class="lfield"><label>Username</label>
+      <input type="text" id="iu" placeholder="Enter username" autocomplete="off" oninput="updateLoginHint()" onkeydown="if(event.key==='Enter')g('ip').focus()"/></div>
+    <div class="lfield"><label>Password</label>
+      <input type="password" id="ip" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+    <button class="btn-login" onclick="doLogin()">Sign In →</button>
+    <div id="lerr"></div>
+    <div class="lhint" id="lhint-text">HOD: <code>admin</code> / <code>admin123</code></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="topbar">
+    <div class="tb-left">
+      <div class="tb-logo">📅</div>
+      <div class="tb-title">TimeCraft</div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-user">
+        <div class="av" id="tb-av">A</div>
+        <span id="tb-uname">Admin</span>
+        <span class="tb-role-badge role-hod" id="tb-role">HOD</span>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Sign Out</button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar" id="main-sidebar">
+      <div class="sid-sec" id="sid-overview">Overview</div>
+      <div class="nitem active" onclick="nav('dashboard')" id="n-dashboard">
+        <div class="nicon">🏠</div><span>Dashboard</span>
+      </div>
+
+      <!-- HOD/Admin only nav -->
+      <div id="sid-admin-nav">
+        <div class="sid-sec">Step-by-Step</div>
+        <div class="nitem" onclick="nav('subjects')" id="n-subjects">
+          <div class="nicon">📚</div><span>Step 1 — Subjects</span>
+          <div class="nbadge" id="b-sub">0</div>
+        </div>
+        <div class="nitem" onclick="nav('classes')" id="n-classes">
+          <div class="nicon">🏫</div><span>Step 2 — Classes</span>
+          <div class="nbadge" id="b-cls">0</div>
+        </div>
+        <div class="nitem" onclick="nav('teachers')" id="n-teachers">
+          <div class="nicon">👨‍🏫</div><span>Step 3 — Teachers</span>
+          <div class="nbadge" id="b-tch">0</div>
+        </div>
+        <div class="nitem" onclick="nav('teacher-subjects')" id="n-teacher-subjects">
+          <div class="nicon">🔗</div><span>Step 4 — Teacher → Subjects</span>
+        </div>
+        <div class="nitem" onclick="nav('class-subjects')" id="n-class-subjects">
+          <div class="nicon">📋</div><span>Step 5 — Class → Subjects</span>
+        </div>
+        <div class="sid-sec">Output</div>
+        <div class="nitem" onclick="nav('timetable')" id="n-timetable">
+          <div class="nicon">🗓️</div><span>Step 6 — Generate</span>
+        </div>
+        <div class="sid-sec">Admin</div>
+        <div class="nitem" onclick="nav('users')" id="n-users">
+          <div class="nicon">👥</div><span>Manage Users</span>
+        </div>
+        <div class="nitem" onclick="nav('config')" id="n-config">
+          <div class="nicon">⚙️</div><span>Configuration</span>
+        </div>
+      </div>
+
+      <!-- Teacher nav -->
+      <div id="sid-teacher-nav" style="display:none">
+        <div class="sid-sec">My Schedule</div>
+        <div class="nitem" onclick="nav('my-timetable')" id="n-my-timetable">
+          <div class="nicon">🗓️</div><span>My Timetable</span>
+        </div>
+      </div>
+
+      <!-- Student nav -->
+      <div id="sid-student-nav" style="display:none">
+        <div class="sid-sec">My Schedule</div>
+        <div class="nitem" onclick="nav('student-timetable')" id="n-student-timetable">
+          <div class="nicon">🗓️</div><span>Class Timetable</span>
+        </div>
+      </div>
+
+      <!-- Common -->
+      <div class="sid-sec">Account</div>
+      <div class="nitem" onclick="nav('settings')" id="n-settings">
+        <div class="nicon">🔒</div><span>Settings</span>
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ════ DASHBOARD ════ -->
+      <div class="page active" id="page-dashboard">
+        <div class="ph">
+          <div class="bc">Home / <span>Dashboard</span></div>
+          <h2 id="dash-title">Dashboard</h2>
+          <p id="dash-sub">Follow the 6-step workflow below to create your timetable</p>
+        </div>
+        <div class="sgrid" id="sg"></div>
+        <div class="card" id="dash-wf-card">
+          <div class="ch"><div class="ct">📋 Setup Workflow — Complete These Steps in Order</div></div>
+          <div id="wf"></div>
+        </div>
+        <div class="card" id="dash-cls-card" style="display:none">
+          <div class="ch"><div class="ct">📊 Class Readiness</div></div>
+          <div id="dash-cls"></div>
+        </div>
+      </div>
+
+      <!-- ════ STEP 1 — SUBJECTS ════ -->
+      <div class="page" id="page-subjects">
+        <div class="ph">
+          <div class="bc">Setup / <span>Step 1 — Subjects</span></div>
+          <h2>Manage Subjects</h2>
+          <p>Add all subjects. Each must be unique. Subjects will be available to assign to teachers and classes.</p>
+        </div>
+        <div class="alert alert-warn" id="al-sub">
+          <span id="al-sub-msg"></span><button class="ac" onclick="ha('al-sub')">✕</button>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div><div class="ct">➕ Add Subject</div><div class="cs">Press Enter or click Add</div></div>
+          </div>
+          <div class="frow">
+            <div class="fg" style="max-width:360px">
+              <label>Subject Name</label>
+              <input type="text" id="i-sub" placeholder="e.g. Mathematics, Physics, English…" maxlength="60"
+                oninput="ha('al-sub')" onkeydown="if(event.key==='Enter')addSubject()"/>
+            </div>
+            <button class="btn btn-p" onclick="addSubject()">➕ Add Subject</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">📚 All Subjects <span id="c-sub" style="font-size:.76rem;color:var(--muted);font-weight:600"></span></div>
+            <button class="btn btn-next btn-sm" onclick="nav('classes')">Next → Add Classes</button>
+          </div>
+          <div id="sub-list"></div>
+        </div>
+      </div>
+
+      <!-- ════ STEP 2 — CLASSES ════ -->
+      <div class="page" id="page-classes">
+        <div class="ph">
+          <div class="bc">Setup / <span>Step 2 — Classes</span></div>
+          <h2>Manage Classes</h2>
+          <p>Add all classes and sections. Each class name must be unique.</p>
+        </div>
+        <div class="alert alert-warn" id="al-cls">
+          <span id="al-cls-msg"></span><button class="ac" onclick="ha('al-cls')">✕</button>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div><div class="ct">➕ Add Class</div><div class="cs">e.g. 10-A, XI Science, 12-Commerce</div></div>
+          </div>
+          <div class="frow">
+            <div class="fg" style="max-width:360px">
+              <label>Class / Section</label>
+              <input type="text" id="i-cls" placeholder="e.g. 10-A, 11-Science…" maxlength="40"
+                oninput="ha('al-cls')" onkeydown="if(event.key==='Enter')addClass()"/>
+            </div>
+            <button class="btn btn-p" onclick="addClass()">➕ Add Class</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">🏫 All Classes <span id="c-cls" style="font-size:.76rem;color:var(--muted);font-weight:600"></span></div>
+            <button class="btn btn-next btn-sm" onclick="nav('teachers')">Next → Add Teachers</button>
+          </div>
+          <div id="cls-list"></div>
+        </div>
+      </div>
+
+      <!-- ════ STEP 3 — TEACHERS ════ -->
+      <div class="page" id="page-teachers">
+        <div class="ph">
+          <div class="bc">Setup / <span>Step 3 — Teachers</span></div>
+          <h2>Manage Teachers</h2>
+          <p>Add all teachers. You will assign their subjects in the next step.</p>
+        </div>
+        <div class="alert alert-warn" id="al-tch">
+          <span id="al-tch-msg"></span><button class="ac" onclick="ha('al-tch')">✕</button>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div><div class="ct">➕ Add Teacher</div><div class="cs">Full name of the teacher</div></div>
+          </div>
+          <div class="frow">
+            <div class="fg" style="max-width:360px">
+              <label>Teacher Name</label>
+              <input type="text" id="i-tch" placeholder="e.g. Mr. Ramesh Kumar, Mrs. Priya Nair…" maxlength="60"
+                oninput="ha('al-tch')" onkeydown="if(event.key==='Enter')addTeacher()"/>
+            </div>
+            <button class="btn btn-p" onclick="addTeacher()">➕ Add Teacher</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">👨‍🏫 All Teachers <span id="c-tch" style="font-size:.76rem;color:var(--muted);font-weight:600"></span></div>
+            <button class="btn btn-next btn-sm" onclick="nav('teacher-subjects')">Next → Assign Subjects to Teachers</button>
+          </div>
+          <div id="tch-list"></div>
+        </div>
+      </div>
+
+      <!-- ════ STEP 4 — TEACHER → SUBJECTS ════ -->
+      <div class="page" id="page-teacher-subjects">
+        <div class="ph">
+          <div class="bc">Setup / <span>Step 4 — Teacher → Subjects</span></div>
+          <h2>Assign Subjects to Teachers</h2>
+          <p>Select a teacher, then tick all subjects they are qualified to teach. One teacher can handle multiple subjects.</p>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div>
+              <div class="ct">🔗 Teacher — Subject Assignment</div>
+              <div class="cs">Pick a teacher → tick subjects → Save</div>
+            </div>
+          </div>
+          <div class="fg" style="max-width:320px;margin-bottom:18px">
+            <label>Select Teacher</label>
+            <select id="ts-sel-tch" onchange="onTSTeacherChange()">
+              <option value="">— Choose a teacher —</option>
+            </select>
+          </div>
+          <div id="ts-panel" style="display:none">
+            <div style="font-size:.76rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">
+              Tick subjects this teacher can teach:
+            </div>
+            <div class="cgrid" id="ts-checks"></div>
+            <div style="margin-top:15px;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-g" onclick="saveTSAssign()">💾 Save</button>
+              <button class="btn btn-ghost" onclick="tsAll(true)">☑ All</button>
+              <button class="btn btn-ghost" onclick="tsAll(false)">☐ Clear</button>
+            </div>
+          </div>
+          <div id="ts-hint" style="color:var(--muted);font-size:.84rem;padding:4px 0"></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">📋 Teacher → Subject Summary</div>
+            <button class="btn btn-next btn-sm" onclick="nav('class-subjects')">Next → Assign Subjects to Classes</button>
+          </div>
+          <div id="ts-summary"></div>
+        </div>
+      </div>
+
+      <!-- ════ STEP 5 — CLASS → SUBJECTS ════ -->
+      <div class="page" id="page-class-subjects">
+        <div class="ph">
+          <div class="bc">Setup / <span>Step 5 — Class → Subjects</span></div>
+          <h2>Assign Subjects to Classes</h2>
+          <p>For each class, choose which subjects are taught and how many periods per week each subject requires.</p>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div>
+              <div class="ct">📋 Class — Subject Assignment</div>
+              <div class="cs">Select a class → tick subjects → set periods/week → Save</div>
+            </div>
+          </div>
+          <div class="fg" style="max-width:300px;margin-bottom:18px">
+            <label>Select Class</label>
+            <select id="cs-sel-cls" onchange="onCSClassChange()">
+              <option value="">— Choose a class —</option>
+            </select>
+          </div>
+          <div id="cs-panel" style="display:none">
+            <div style="font-size:.76rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:9px">
+              Tick subjects and set periods per week:
+            </div>
+            <div id="cs-checks"></div>
+            <div style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap">
+              <button class="btn btn-g" onclick="saveCSAssign()">💾 Save</button>
+              <button class="btn btn-ghost" onclick="csAll(true)">☑ Select All</button>
+              <button class="btn btn-ghost" onclick="csAll(false)">☐ Clear All</button>
+            </div>
+          </div>
+          <div id="cs-hint" style="color:var(--muted);font-size:.84rem;padding:4px 0"></div>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div class="ct">📊 Class → Subject Summary</div>
+            <button class="btn btn-next btn-sm" onclick="nav('timetable')">Next → Generate Timetable</button>
+          </div>
+          <div id="cs-summary"></div>
+        </div>
+      </div>
+
+      <!-- ════ STEP 6 — GENERATE TIMETABLE ════ -->
+      <div class="page" id="page-timetable">
+        <div class="ph">
+          <div class="bc">Output / <span>Step 6 — Generate</span></div>
+          <h2>Generate Timetable</h2>
+          <p>Clash-free timetable: same teacher cannot be in two classes at the same period.</p>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">⚙️ Settings</div></div>
+          <div class="frow" style="align-items:flex-end;gap:14px;flex-wrap:wrap">
+            <div class="fg" style="max-width:175px">
+              <label>Periods Per Day</label>
+              <select id="tt-p">
+                <option value="5">5 Periods</option>
+                <option value="6" selected>6 Periods</option>
+                <option value="7">7 Periods</option>
+                <option value="8">8 Periods</option>
+              </select>
+            </div>
+            <div class="fg" style="max-width:195px">
+              <label>Working Days</label>
+              <select id="tt-d">
+                <option value="5" selected>Mon – Fri (5 days)</option>
+                <option value="6">Mon – Sat (6 days)</option>
+              </select>
+            </div>
+            <button class="btn btn-gen" onclick="generateTimetable()">⚡ Generate Timetable</button>
+            <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨️ Print</button>
+          </div>
+        </div>
+
+        <div id="tt-out" style="display:none">
+          <div class="card" style="padding:14px 18px;margin-bottom:14px">
+            <div class="ct" style="margin-bottom:10px">📅 Period Schedule</div>
+            <div id="tt-legend"></div>
+          </div>
+          <div class="ttabs" id="tt-tabs"></div>
+          <div class="card" id="tt-disp"></div>
+        </div>
+      </div>
+
+      <!-- ════ MANAGE USERS ════ -->
+      <div class="page" id="page-users">
+        <div class="ph">
+          <div class="bc">Admin / <span>Manage Users</span></div>
+          <h2>Manage Users</h2>
+          <p>Create and manage teacher and student login accounts.</p>
+        </div>
+        <div class="card">
+          <div class="ch">
+            <div><div class="ct">➕ Add User Account</div><div class="cs">Create login for a teacher or student</div></div>
+          </div>
+          <div class="frow" style="flex-wrap:wrap">
+            <div class="fg" style="max-width:160px">
+              <label>Role</label>
+              <select id="u-role" onchange="onUserRoleChange()">
+                <option value="teacher">Teacher</option>
+                <option value="student">Student</option>
+              </select>
+            </div>
+            <div class="fg" style="max-width:240px" id="u-link-wrap">
+              <label id="u-link-label">Link to Teacher</label>
+              <select id="u-link">
+                <option value="">— Select teacher —</option>
+              </select>
+            </div>
+            <div class="fg" style="max-width:180px">
+              <label>Username</label>
+              <input type="text" id="u-uname" placeholder="e.g. ramesht" maxlength="40" onkeydown="if(event.key==='Enter')addUser()"/>
+            </div>
+            <div class="fg" style="max-width:180px">
+              <label>Password</label>
+              <input type="password" id="u-pass" placeholder="Min 6 chars" maxlength="60" onkeydown="if(event.key==='Enter')addUser()"/>
+            </div>
+            <button class="btn btn-p" onclick="addUser()">➕ Create User</button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ch"><div class="ct">👥 All User Accounts</div></div>
+          <div id="users-list"></div>
+        </div>
+      </div>
+
+      <!-- ════ CONFIGURATION ════ -->
+      <div class="page" id="page-config">
+        <div class="ph">
+          <div class="bc">Admin / <span>Configuration</span></div>
+          <h2>Configuration</h2>
+          <p>Set up school timings, period durations, and break schedules.</p>
+        </div>
+
+        <div class="card">
+          <div class="ch"><div class="ct">⏱️ Period Duration & Daily Structure</div></div>
+          <div class="frow" style="flex-wrap:wrap;gap:14px">
+            <div class="fg" style="max-width:180px">
+              <label>Period Duration (min)</label>
+              <input type="number" id="cfg-period-dur" min="30" max="90" value="45" placeholder="45"/>
+            </div>
+            <div class="fg" style="max-width:180px">
+              <label>Periods Per Day</label>
+              <input type="number" id="cfg-periods-day" min="3" max="10" value="6" placeholder="6" oninput="rebuildConfigSlots()"/>
+            </div>
+            <div class="fg" style="max-width:180px">
+              <label>School Start Time</label>
+              <input type="time" id="cfg-start" value="08:00" oninput="rebuildConfigSlots()"/>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch">
+            <div><div class="ct">☕ Break Configuration</div><div class="cs">Set break positions and durations</div></div>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px">
+            <div style="padding:14px;border:1.5px solid var(--yellow-border);border-radius:10px;background:var(--yellow-soft)">
+              <div style="font-weight:800;font-size:.88rem;margin-bottom:10px">☕ Short Break 1</div>
+              <div class="frow">
+                <div class="fg"><label>After Period #</label>
+                  <input type="number" id="cfg-sb1-after" min="1" max="9" value="2" oninput="rebuildConfigSlots()"/></div>
+                <div class="fg"><label>Duration (min)</label>
+                  <input type="number" id="cfg-sb1-dur" min="5" max="30" value="15" oninput="rebuildConfigSlots()"/></div>
+              </div>
+            </div>
+            <div style="padding:14px;border:1.5px solid var(--yellow-border);border-radius:10px;background:var(--yellow-soft)">
+              <div style="font-weight:800;font-size:.88rem;margin-bottom:10px">☕ Short Break 2</div>
+              <div class="frow">
+                <div class="fg"><label>After Period #</label>
+                  <input type="number" id="cfg-sb2-after" min="1" max="9" value="4" oninput="rebuildConfigSlots()"/></div>
+                <div class="fg"><label>Duration (min)</label>
+                  <input type="number" id="cfg-sb2-dur" min="5" max="30" value="15" oninput="rebuildConfigSlots()"/></div>
+              </div>
+            </div>
+            <div style="padding:14px;border:1.5px solid #fed7aa;border-radius:10px;background:#fff7ed">
+              <div style="font-weight:800;font-size:.88rem;margin-bottom:10px">🍽️ Lunch Break</div>
+              <div class="frow">
+                <div class="fg"><label>After Period #</label>
+                  <input type="number" id="cfg-lunch-after" min="1" max="9" value="5" oninput="rebuildConfigSlots()"/></div>
+                <div class="fg"><label>Duration (min)</label>
+                  <input type="number" id="cfg-lunch-dur" min="15" max="90" value="45" oninput="rebuildConfigSlots()"/></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="ch">
+            <div><div class="ct">📅 Live Period Schedule Preview</div><div class="cs">Updates as you type</div></div>
+            <button class="btn btn-g" onclick="saveConfig()">💾 Save Configuration</button>
+          </div>
+          <div id="cfg-preview"></div>
+        </div>
+      </div>
+
+      <!-- ════ TEACHER TIMETABLE VIEW ════ -->
+      <div class="page" id="page-my-timetable">
+        <div class="ph">
+          <div class="bc">My Schedule / <span>My Timetable</span></div>
+          <h2>My Personal Timetable</h2>
+          <p>Your complete weekly teaching schedule.</p>
+        </div>
+        <div class="ro-badge ro-view">👁️ View Only — Your personal schedule</div>
+        <div id="my-tt-content"></div>
+      </div>
+
+      <!-- ════ STUDENT TIMETABLE VIEW ════ -->
+      <div class="page" id="page-student-timetable">
+        <div class="ph">
+          <div class="bc">My Schedule / <span>Class Timetable</span></div>
+          <h2>Class Timetable</h2>
+          <p>Your class schedule — read only.</p>
+        </div>
+        <div class="ro-badge ro-student">🔒 View Only — No changes allowed</div>
+        <div id="student-tt-content"></div>
+      </div>
+
+      <!-- ════ SETTINGS ════ -->
+      <div class="page" id="page-settings">
+        <div class="ph">
+          <div class="bc">Account / <span>Settings</span></div>
+          <h2>Account Settings</h2>
+          <p>Update your username and password.</p>
+        </div>
+        <div class="card" style="max-width:520px">
+          <div class="ch"><div class="ct">🔒 Change Credentials</div></div>
+          <div style="display:flex;flex-direction:column;gap:14px">
+            <div class="fg">
+              <label>New Username</label>
+              <input type="text" id="set-uname" placeholder="Leave blank to keep current" maxlength="40"/>
+            </div>
+            <div class="fg">
+              <label>Current Password</label>
+              <input type="password" id="set-curpass" placeholder="Required to save changes"/>
+            </div>
+            <div class="fg">
+              <label>New Password</label>
+              <input type="password" id="set-newpass" placeholder="Leave blank to keep current" maxlength="60"/>
+            </div>
+            <div class="fg">
+              <label>Confirm New Password</label>
+              <input type="password" id="set-confpass" placeholder="Repeat new password"/>
+            </div>
+            <div>
+              <button class="btn btn-p" onclick="saveSettings()">💾 Save Changes</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /layout -->
+</div><!-- /app -->
+
+<!-- PERIODS-PER-WEEK MODAL -->
+<div class="modal-overlay" id="ppw-modal">
+  <div class="modal">
+    <h3>📅 Periods Per Week</h3>
+    <p style="color:var(--muted);font-size:.85rem;margin-bottom:18px">
+      How many periods per week should <strong id="ppw-sub-name"></strong> be scheduled for <strong id="ppw-cls-name"></strong>?
+    </p>
+    <div class="fg">
+      <label>Periods Per Week</label>
+      <input type="number" id="ppw-val" min="1" max="30" value="5" style="max-width:120px" onkeydown="if(event.key==='Enter')confirmPPW()"/>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closePPWModal()">Cancel</button>
+      <button class="btn btn-p" onclick="confirmPPW()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<div id="tc"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

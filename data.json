@@ -1,0 +1,22 @@
+{
+  "subjects": [],
+  "classes": [],
+  "teachers": [],
+  "teacherSubjects": {},
+  "classSubjects": {},
+  "subjectPeriods": {},
+  "users": [
+    { "role": "hod", "username": "admin", "password": "admin123", "linked": "" }
+  ],
+  "config": {
+    "periodDur": 45,
+    "periodsPerDay": 6,
+    "startTime": "08:00",
+    "sb1After": 2,
+    "sb1Dur": 15,
+    "sb2After": 4,
+    "sb2Dur": 15,
+    "lunchAfter": 5,
+    "lunchDur": 45
+  }
+}
